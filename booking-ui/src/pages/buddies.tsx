@@ -37,7 +37,10 @@ class Buddies extends React.Component<Props, State> {
       this.props.router.push("/login");
       return;
     }
-    if (!RuntimeConfig.INFOS.showNames || RuntimeConfig.INFOS.disableBuddies) {
+    if (
+      (!RuntimeConfig.INFOS.showNames || RuntimeConfig.INFOS.disableBuddies) && 
+      !RuntimeConfig.INFOS.halfbakeBuddies
+    ) {
       this.props.router.push("/search");
       return;
     }

@@ -15,6 +15,7 @@ interface RuntimeUserInfos {
     customLogoUrl: string;
     defaultTimezone: string;
     disableBuddies: boolean;
+    halfbakeBuddies: boolean;
     maxHoursPartiallyBooked: number;
     maxHoursPartiallyBookedEnabled: boolean;
 }
@@ -33,6 +34,7 @@ export default class RuntimeConfig {
         dailyBasisBooking: false,
         noAdminRestrictions: false,
         disableBuddies: false,
+        halfbakeBuddies: true,
         customLogoUrl: '',
         maxHoursPartiallyBooked: 0,
         maxHoursPartiallyBookedEnabled: false,
