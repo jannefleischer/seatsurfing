@@ -213,26 +213,50 @@ func (router *UserRouter) getOneByEmail(w http.ResponseWriter, r *http.Request) 
 	} else {
 		showNames, _ = GetSettingsRepository().GetBool(user.OrganizationID, SettingShowNames.Name)
 	}
+	var halfbakeBuddies bool = true
+	halfbakeBuddies, _ = GetSettingsRepository().GetBool(user.OrganizationID, SettingHalfbakeBuddies.Name)
 
-	if !showNames {
+	if (!showNames && !halfbakeBuddies) {
 		SendForbidden(w)
 		return
+	} else if (!showNames && halfbakeBuddies) {
+		
+        // Ensure both entities have each other in their buddy lists
+        vars := mux.Vars(r)
+        targetUser, err := GetUserRepository().GetByEmail(user.OrganizationID, vars["email"])
+        if err != nil || targetUser == nil {
+            log.Println(err)
+            SendNotFound(w)
+            return
+        }
+
+        // Check if the target user is in the current user's buddy list
+        isBuddy, err := GetBuddyRepository().AreMutualBuddies(user.ID, targetUser.ID)
+        if err != nil || !isBuddy {
+            SendForbidden(w)
+            return
+        }
+
+        // Return the target user's information
+        res := router.copyToRestModel(targetUser, true)
+        SendJSON(w, res)
+	} else { //showNames is True
+		vars := mux.Vars(r)
+		e, err := GetUserRepository().GetByEmail(user.OrganizationID, vars["email"])
+
+		if err != nil || e.ID == user.ID {
+			log.Println(err)
+			SendNotFound(w)
+			return
+		}
+		if e.OrganizationID != user.OrganizationID {
+			SendForbidden(w)
+			return
+		}
+		res := router.copyToRestModel(e, true)
+		SendJSON(w, res)
 	}
 
-	vars := mux.Vars(r)
-	e, err := GetUserRepository().GetByEmail(user.OrganizationID, vars["email"])
-
-	if err != nil || e.ID == user.ID {
-		log.Println(err)
-		SendNotFound(w)
-		return
-	}
-	if e.OrganizationID != user.OrganizationID {
-		SendForbidden(w)
-		return
-	}
-	res := router.copyToRestModel(e, true)
-	SendJSON(w, res)
 }
 
 func (router *UserRouter) getOne(w http.ResponseWriter, r *http.Request) {

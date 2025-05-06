@@ -95,6 +95,61 @@ func (r *BuddyRepository) GetAllByOwner(ownerID string) ([]*BuddyDetails, error)
 	return result, nil
 }
 
+func (r *BuddyRepository) GetMutualBuddies(userID string, buddyIDs []string) ([]*Buddy, error) {
+    // Build query placeholders and arguments manually
+    query := "SELECT b.id, b.owner_id, b.buddy_id FROM buddies b WHERE b.owner_id IN ("
+    args := make([]interface{}, 0, len(buddyIDs)+1)
+
+    for i, id := range buddyIDs {
+        if i > 0 {
+            query += ", "
+        }
+        query += "?"
+        args = append(args, id)
+    }
+    query += ") AND b.buddy_id = ?"
+    args = append(args, userID)
+
+    rows, err := GetDatabase().DB().Query(query, args...)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    var mutualBuddies []*Buddy
+    for rows.Next() {
+        buddy := &Buddy{}
+        if err := rows.Scan(&buddy.ID, &buddy.OwnerID, &buddy.BuddyID); err != nil {
+            return nil, err
+        }
+        mutualBuddies = append(mutualBuddies, buddy)
+    }
+
+    if err := rows.Err(); err != nil {
+        return nil, err
+    }
+
+    return mutualBuddies, nil
+}
+
+func (r *BuddyRepository) AreMutualBuddies(userID string, buddyID string) (bool, error) {
+    query := `
+        SELECT EXISTS (
+            SELECT 1
+            FROM buddies b1
+            INNER JOIN buddies b2
+            ON b1.owner_id = b2.buddy_id AND b1.buddy_id = b2.owner_id
+            WHERE b1.owner_id = $1 AND b1.buddy_id = $2
+        )
+    `
+    var exists bool
+    err := GetDatabase().DB().QueryRow(query, userID, buddyID).Scan(&exists)
+    if err != nil {
+        return false, err
+    }
+    return exists, nil
+}
+
 func (r *BuddyRepository) Delete(e *BuddyDetails) error {
 	_, err := GetDatabase().DB().Exec("DELETE FROM buddies WHERE id = $1", e.ID)
 	return err

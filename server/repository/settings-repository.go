@@ -48,6 +48,7 @@ var (
 	SettingNoAdminRestrictions            SettingName = SettingName{Name: "no_admin_restrictions", Type: SettingTypeBool}
 	SettingCustomLogoUrl                  SettingName = SettingName{Name: "custom_logo_url", Type: SettingTypeString}
 	SettingShowNames                      SettingName = SettingName{Name: "show_names", Type: SettingTypeBool}
+	SettingHalfbakeBuddies                SettingName = SettingName{Name: "halbake_buddies", Type: SettingTypeBool}
 	SettingAllowBookingsNonExistingUsers  SettingName = SettingName{Name: "allow_booking_nonexist_users", Type: SettingTypeBool}
 	SettingDisableBuddies                 SettingName = SettingName{Name: "disable_buddies", Type: SettingTypeBool}
 	SettingDefaultTimezone                SettingName = SettingName{Name: "default_timezone", Type: SettingTypeString}
@@ -240,6 +241,7 @@ func (r *SettingsRepository) InitDefaultSettingsForOrg(organizationID string) er
 		"($1, '"+SettingNoAdminRestrictions.Name+"', '0'), "+
 		"($1, '"+SettingCustomLogoUrl.Name+"', ''), "+
 		"($1, '"+SettingShowNames.Name+"', '0'), "+
+		"($1, '"+SettingHalfbakeBuddies.Name+"', '0'), "+
 		"($1, '"+SettingAllowBookingsNonExistingUsers.Name+"', '0'), "+
 		"($1, '"+SettingDisableBuddies.Name+"', '0'), "+
 		"($1, '"+SettingConfluenceServerSharedSecret.Name+"', ''), "+

@@ -220,6 +220,7 @@ func (router *SettingsRouter) isValidSettingNameReadPublic(name string) bool {
 		name == SettingMaxHoursBeforeDelete.Name ||
 		name == SettingMinBookingDurationHours.Name ||
 		name == SettingShowNames.Name ||
+		name == SettingHalfbakeBuddies.Name ||
 		name == SettingEnableMaxHourBeforeDelete.Name ||
 		name == SettingAllowBookingsNonExistingUsers.Name ||
 		name == SettingDailyBasisBooking.Name ||
@@ -269,6 +270,7 @@ func (router *SettingsRouter) isValidSettingNameWrite(name string) bool {
 		name == SettingNoAdminRestrictions.Name ||
 		name == SettingCustomLogoUrl.Name ||
 		name == SettingShowNames.Name ||
+		name == SettingHalfbakeBuddies.Name ||
 		name == SettingMaxHoursPartiallyBooked.Name ||
 		name == SettingMaxHoursPartiallyBookedEnabled.Name ||
 		name == SettingAllowBookingsNonExistingUsers.Name ||
@@ -310,6 +312,9 @@ func (router *SettingsRouter) getSettingType(name string) SettingType {
 	}
 	if name == SettingShowNames.Name {
 		return SettingShowNames.Type
+	}
+	if name == SettingHalfbakeBuddies.Name {
+		return SettingHalfbakeBuddies.Type
 	}
 	if name == SettingAllowBookingsNonExistingUsers.Name {
 		return SettingAllowBookingsNonExistingUsers.Type

@@ -175,3 +175,43 @@ func TestBuddiesList(t *testing.T) {
 	}
 	CheckTestString(t, buddyUser3.ID, resBody2[0].BuddyID)
 }
+
+func TestGetMutualBuddies(t *testing.T) {
+    ClearTestDB()
+
+    // Create test organization and users
+    org := CreateTestOrg("example.com")
+    user := CreateTestUserInOrg(org)
+    buddy1 := CreateTestUserInOrg(org)
+    buddy2 := CreateTestUserInOrg(org)
+
+    // Create mutual buddy relationships
+    GetBuddyRepository().Create(&Buddy{OwnerID: user.ID, BuddyID: buddy1.ID})
+    GetBuddyRepository().Create(&Buddy{OwnerID: buddy1.ID, BuddyID: user.ID}) // Mutual buddy
+    GetBuddyRepository().Create(&Buddy{OwnerID: buddy2.ID, BuddyID: user.ID}) // Non-mutual buddy
+
+    // Login as the user
+    loginResponse := LoginTestUser(user.ID)
+
+    // Prepare request payload
+    payload := map[string]interface{}{
+        "buddy_ids":    []string{buddy1.ID, buddy2.ID},
+        "buddy_emails": []string{buddy1.Email, buddy2.Email},
+    }
+    payloadBytes, _ := json.Marshal(payload)
+
+    // Send request to get mutual buddies
+    req := NewHTTPRequest("PUT", "/buddy/", loginResponse.UserID, bytes.NewBuffer(payloadBytes))
+    res := ExecuteTestRequest(req)
+
+    // Validate response
+    CheckTestResponseCode(t, http.StatusOK, res.Code)
+    var mutualBuddies []*BuddyDetails
+    json.Unmarshal(res.Body.Bytes(), &mutualBuddies)
+
+    // Ensure only the mutual buddy is returned
+    if len(mutualBuddies) != 1 {
+        t.Fatalf("Expected 1 mutual buddy, got %d", len(mutualBuddies))
+    }
+    CheckTestString(t, buddy1.ID, mutualBuddies[0].BuddyID)
+}

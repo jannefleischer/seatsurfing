@@ -148,6 +148,9 @@ func (router *SpaceRouter) getAvailability(w http.ResponseWriter, r *http.Reques
 	} else {
 		showNames, _ = GetSettingsRepository().GetBool(location.OrganizationID, SettingShowNames.Name)
 	}
+	var halfbakeBuddies bool = true
+	halfbakeBuddies, _ = GetSettingsRepository().GetBool(location.OrganizationID, SettingHalfbakeBuddies.Name)
+
 	list, err := GetSpaceRepository().GetAllInTime(location.ID, enterNew, leaveNew)
 	if err != nil {
 		log.Println(err)
@@ -185,9 +188,26 @@ func (router *SpaceRouter) getAvailability(w http.ResponseWriter, r *http.Reques
 				leave, _ := GetLocationRepository().AttachTimezoneInformation(booking.Leave, location)
 				outUserId := ""
 				outUserEmail := ""
-				if showName || user.Email == booking.UserEmail {
+				if (showName || user.Email == booking.UserEmail) {
 					outUserId = booking.UserID
 					outUserEmail = booking.UserEmail
+				} else if (!showName && halfbakeBuddies) {
+
+					// Ensure both entities have each other in their buddy lists
+					vars := mux.Vars(r)
+					targetUser, err := GetUserRepository().GetByEmail(user.OrganizationID, vars["email"])
+					if err == nil && targetUser != nil {
+						log.Println(err)
+						//SendNotFound(w)
+						//return
+					}
+
+					// Check if the target user is in the current user's buddy list
+					isBuddy, err := GetBuddyRepository().AreMutualBuddies(user.ID, targetUser.ID)
+					if err == nil && isBuddy {
+						outUserId = booking.UserID
+						outUserEmail = booking.UserEmail
+					}
 				}
 				entry := &GetSpaceAvailabilityBookingsResponse{
 					BookingID: booking.BookingID,

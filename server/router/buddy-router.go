@@ -38,7 +38,84 @@ type GetBuddyResponse struct {
 func (router *BuddyRouter) SetupRoutes(s *mux.Router) {
 	s.HandleFunc("/{id}", router.delete).Methods("DELETE")
 	s.HandleFunc("/", router.create).Methods("POST")
+	s.HandleFunc("/", router.getMutualBuddies).Methods("PUT")
 	s.HandleFunc("/", router.getAll).Methods("GET")
+}
+
+func (router *BuddyRouter) getMutualBuddies(w http.ResponseWriter, r *http.Request) {
+    var request struct {
+        BuddyIDs    []string `json:"buddy_ids" validate:"omitempty"`    // Optional list of IDs
+        BuddyEmails []string `json:"buddy_emails" validate:"omitempty"` // Optional list of emails
+    }
+    // Parse and validate the request body
+    if err := UnmarshalValidateBody(r, &request); err != nil {
+        SendBadRequest(w)
+        return
+    }
+
+	// Ensure only one of BuddyIDs or BuddyEmails is used
+	if len(request.BuddyIDs) > 0 && len(request.BuddyEmails) > 0 {
+		log.Println("Both buddy_ids and buddy_emails provided in the request")
+		SendBadRequest(w)
+		return
+	}
+	
+	user := GetRequestUser(r)
+	if user == nil {
+		log.Println("Failed to retrieve user")
+        SendUnauthorized(w)
+		return
+	}
+	
+    userID := user.ID
+    organizationID := user.OrganizationID
+
+    // Resolve emails to IDs
+    buddyIDs := request.BuddyIDs // Start with the provided IDs
+    for _, email := range request.BuddyEmails {
+        user, err := GetUserRepository().GetByEmail(organizationID, email)
+        if err != nil {
+            log.Printf("Failed to resolve email %s in organization %s: %v", email, organizationID, err)
+            continue
+        }
+        buddyIDs = append(buddyIDs, user.ID)
+    }
+
+    // Query the repository to find mutual buddies
+    mutualBuddies, err := GetBuddyRepository().GetMutualBuddies(userID, request.BuddyIDs)
+    if err != nil {
+        log.Println(err)
+        SendInternalServerError(w)
+        return
+    }
+
+	// Filter mutualBuddies to include only requested IDs or emails
+	filteredBuddies := []string{} //will hold only ids or mails (by check above).
+	requestedIDs := make(map[string]bool)
+	for _, id := range request.BuddyIDs {
+		requestedIDs[id] = true
+	}
+
+	requestedEmails := make(map[string]bool)
+	for _, email := range request.BuddyEmails {
+		requestedEmails[email] = true
+	}
+
+	// Filter based on requested IDs
+	for _, buddy := range mutualBuddies {
+		if requestedIDs[buddy.BuddyID] {
+			filteredBuddies = append(filteredBuddies, buddy.BuddyID)
+		}
+
+		if buddyObj, err := GetBuddyRepository().GetOne(buddy.BuddyID); err == nil {
+			if requestedEmails[buddyObj.BuddyEmail] {
+				filteredBuddies = append(filteredBuddies, buddyObj.BuddyEmail)
+			}
+		}
+	}
+
+	// Respond with the filtered list of mutual buddy IDs
+	SendJSON(w, filteredBuddies)
 }
 
 func (router *BuddyRouter) getAll(w http.ResponseWriter, r *http.Request) {
