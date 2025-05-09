@@ -3,7 +3,6 @@ package test
 import (
 	"bytes"
 	"encoding/json"
-	"log"
 	"net/http"
 	"testing"
 
@@ -74,6 +73,7 @@ func TestSettingsReadPublic(t *testing.T) {
 		SettingConfluenceServerSharedSecret.Name,
 		SettingConfluenceAnonymous.Name,
 		SettingFeatureNoUserLimit.Name,
+		SettingFeatureGroups.Name,
 		SettingFeatureCustomDomains.Name,
 	}
 
@@ -132,6 +132,7 @@ func TestSettingsReadAdmin(t *testing.T) {
 		SettingConfluenceServerSharedSecret.Name,
 		SettingConfluenceAnonymous.Name,
 		SettingFeatureNoUserLimit.Name,
+		SettingFeatureGroups.Name,
 		SettingFeatureCustomDomains.Name,
 		SettingDefaultTimezone.Name,
 		SettingCustomLogoUrl.Name,
@@ -269,7 +270,6 @@ func TestSettingsMaxHoursBeforeDelete(t *testing.T) {
 	CheckTestResponseCode(t, http.StatusOK, res.Code)
 	var resBody3 []GetSettingsResponse
 	json.Unmarshal(res.Body.Bytes(), &resBody3)
-	log.Println(resBody3)
 	CheckTestInt(t, 5, len(resBody3))
 	CheckTestString(t, SettingMaxHoursBeforeDelete.Name, resBody3[0].Name)
 	CheckTestString(t, SysSettingOrgSignupDelete, resBody3[1].Name)
@@ -294,7 +294,6 @@ func TestSettingsMinHoursBookingDuration(t *testing.T) {
 	CheckTestResponseCode(t, http.StatusOK, res.Code)
 	var resBody3 []GetSettingsResponse
 	json.Unmarshal(res.Body.Bytes(), &resBody3)
-	log.Println(resBody3)
 	CheckTestInt(t, 5, len(resBody3))
 	CheckTestString(t, SettingMinBookingDurationHours.Name, resBody3[0].Name)
 	CheckTestString(t, SysSettingOrgSignupDelete, resBody3[1].Name)
